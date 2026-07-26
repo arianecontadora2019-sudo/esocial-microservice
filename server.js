@@ -139,8 +139,17 @@ function parsePfx(pfxBase64, senha) {
 
 // ── Baixa o arquivo PFX (de uma URL) ──
 async function downloadPfx(url) {
-  const response = await axios.get(url, { responseType: 'arraybuffer' });
-  return Buffer.from(response.data).toString('base64');
+  console.log("Baixando PFX:", url);
+
+  const response = await axios.get(url, {
+    responseType: 'arraybuffer'
+  });
+
+  console.log("Status:", response.status);
+  console.log("Content-Type:", response.headers["content-type"]);
+  console.log("Tamanho:", response.data.length);
+
+  return Buffer.from(response.data).toString("base64");
 }
 
 // ── Assina um evento XML com XMLDSig (enveloped, SHA-256) ──
