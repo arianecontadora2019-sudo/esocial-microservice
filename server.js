@@ -90,21 +90,48 @@ app.get('/health', (req, res) => {
 function parsePfx(pfxBase64, senha) {
   const pfxDer = forge.util.decode64(pfxBase64);
   const p12Asn1 = forge.asn1.fromDer(pfxDer);
-  const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, senha);
+  const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, false, senha);
 
   let privateKey = null;
   let certificate = null;
 
-  for (const bag of p12.bags) {
-    if (bag.type === forge.pki.oids.keyBag) {
-      privateKey = forge.pki.privateKeyToPem(bag.asn1);
-    } else if (bag.type === forge.pki.oids.certBag) {
+  const keyBags =
+    p12.getBags({ bagId: forge.pki.oids.keyBag })[
+      forge.pki.oids.keyBag
+    ] || [];
+
+  const shroudedKeyBags =
+    p12.getBags({ bagId: forge.pki.oids.pkcs8ShroudedKeyBag })[
+      forge.pki.oids.pkcs8ShroudedKeyBag
+    ] || [];
+
+  const certBags =
+    p12.getBags({ bagId: forge.pki.oids.certBag })[
+      forge.pki.oids.certBag
+    ] || [];
+
+  for (const bag of keyBags) {
+    if (bag.key) {
+      privateKey = forge.pki.privateKeyToPem(bag.key);
+    }
+  }
+
+  for (const bag of shroudedKeyBags) {
+    if (bag.key) {
+      privateKey = forge.pki.privateKeyToPem(bag.key);
+    }
+  }
+
+  for (const bag of certBags) {
+    if (bag.cert) {
       certificate = forge.pki.certificateToPem(bag.cert);
     }
   }
 
   if (!privateKey || !certificate) {
-    throw new Error('Não foi possível extrair chave privada ou certificado do PFX. Verifique a senha.');
+    throw new Error(
+      'Não foi possível extrair chave privada ou certificado do PFX. Verifique a senha e o formato do arquivo.'
+    );
   }
 
   return { privateKey, certificate };
