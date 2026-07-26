@@ -96,17 +96,17 @@ function parsePfx(pfxBase64, senha) {
   let certificate = null;
 
   const keyBags =
-    p12.getBags({ bagId: forge.pki.oids.keyBag })[
+    p12.getBags({ bagType: forge.pki.oids.keyBag })[
       forge.pki.oids.keyBag
     ] || [];
 
   const shroudedKeyBags =
-    p12.getBags({ bagId: forge.pki.oids.pkcs8ShroudedKeyBag })[
+    p12.getBags({ bagType: forge.pki.oids.pkcs8ShroudedKeyBag })[
       forge.pki.oids.pkcs8ShroudedKeyBag
     ] || [];
 
   const certBags =
-    p12.getBags({ bagId: forge.pki.oids.certBag })[
+    p12.getBags({ bagType: forge.pki.oids.certBag })[
       forge.pki.oids.certBag
     ] || [];
 
