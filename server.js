@@ -300,7 +300,7 @@ app.post('/transmitir', async (req, res) => {
       httpsAgent,
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_1/IWSEnviarLoteEventos/EnviarLoteEventos',
+        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_1/ServicoEnviarLoteEventos/EnviarLoteEventos',
       },
       timeout: 60000,
     });
@@ -388,7 +388,7 @@ app.post('/consultar', async (req, res) => {
 
     const soapEnvelope = `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
-    <ns2:ConsultarLoteEventos xmlns:ns2="http://www.esocial.gov.br/servicos/empregador/lote/eventos/consulta/v1_1_1">
+   <ns2:ConsultarLoteEventos xmlns:ns2="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_1">
       <consultarLoteEventos>
         <protocoloEnvio>${protocolo}</protocoloEnvio>
       </consultarLoteEventos>
@@ -402,7 +402,7 @@ app.post('/consultar', async (req, res) => {
       httpsAgent,
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/consulta/v1_1_1/IWSConsultarLoteEventos/ConsultarLoteEventos',
+        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_1/ServicoConsultarLoteEventos/ConsultarLoteEventos',
       },
       timeout: 60000,
     });
