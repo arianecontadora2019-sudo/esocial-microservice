@@ -113,24 +113,43 @@ function parsePfx(pfxBase64, senha) {
   for (const bag of keyBags) {
     if (bag.key) {
       privateKey = forge.pki.privateKeyToPem(bag.key);
+      break;
     }
   }
 
-  for (const bag of shroudedKeyBags) {
-    if (bag.key) {
-      privateKey = forge.pki.privateKeyToPem(bag.key);
+  if (!privateKey) {
+    for (const bag of shroudedKeyBags) {
+      if (bag.key) {
+        privateKey = forge.pki.privateKeyToPem(bag.key);
+        break;
+      }
     }
   }
 
   for (const bag of certBags) {
     if (bag.cert) {
       certificate = forge.pki.certificateToPem(bag.cert);
+      break;
     }
   }
 
+  console.log('Bags encontradas:', {
+    keyBag: keyBags.length,
+    shroudedKeyBag: shroudedKeyBags.length,
+    certBag: certBags.length,
+    keyBagTemKey: keyBags.map(b => Boolean(b.key)),
+    keyBagTemAsn1: keyBags.map(b => Boolean(b.asn1)),
+    shroudedTemKey: shroudedKeyBags.map(b => Boolean(b.key)),
+    shroudedTemAsn1: shroudedKeyBags.map(b => Boolean(b.asn1)),
+    certBagTemCert: certBags.map(b => Boolean(b.cert))
+  });
+
   if (!privateKey || !certificate) {
     throw new Error(
-      'Não foi possível extrair chave privada ou certificado do PFX. Verifique a senha e o formato do arquivo.'
+      `Não foi possível extrair o PFX: ` +
+      `keyBag=${keyBags.length}, ` +
+      `shroudedKeyBag=${shroudedKeyBags.length}, ` +
+      `certBag=${certBags.length}.`
     );
   }
 
