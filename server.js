@@ -68,7 +68,7 @@ const ENDPOINTS = {
   },
   'Produção Oficial': {
     enviar: 'https://webservices.envio.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc',
-    consultar: 'https://webservices.envio.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc',
+    consultar: 'https://webservices.consulta.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc',
   },
 };
 
@@ -158,17 +158,8 @@ function parsePfx(pfxBase64, senha) {
 
 // ── Baixa o arquivo PFX (de uma URL) ──
 async function downloadPfx(url) {
-  console.log("Baixando PFX:", url);
-
-  const response = await axios.get(url, {
-    responseType: 'arraybuffer'
-  });
-
-  console.log("Status:", response.status);
-  console.log("Content-Type:", response.headers["content-type"]);
-  console.log("Tamanho:", response.data.length);
-
-  return Buffer.from(response.data).toString("base64");
+  const response = await axios.get(url, { responseType: 'arraybuffer' });
+  return Buffer.from(response.data).toString('base64');
 }
 
 // ── Assina um evento XML com XMLDSig (enveloped, SHA-256) ──
@@ -222,7 +213,7 @@ ${eventosXml}
 function montarSoap(loteXml) {
   return `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
-    <ns2:EnviarLoteEventos xmlns:ns2="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_1">
+    <ns2:EnviarLoteEventos xmlns:ns2="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0">
       <loteEventos>
         ${loteXml}
       </loteEventos>
@@ -239,14 +230,16 @@ function extrairProtocolo(soapResponse) {
 
 function extrairErros(soapResponse) {
   const erros = [];
+  // Captura descrições de ocorrências
   const regex = /<descricao>([^<]+)<\/descricao>/g;
   let m;
   while ((m = regex.exec(soapResponse)) !== null) {
     erros.push(m[1]);
   }
+  // Se não há ocorrências, tenta capturar o descResposta do status
   if (erros.length === 0) {
-    const codMatch = soapResponse.match(/<codigo>(\d+)<\/codigo>[\s\S]*?<descricao>([^<]+)<\/descricao>/);
-    if (codMatch) erros.push(`${codMatch[1]}: ${codMatch[2]}`);
+    const descMatch = soapResponse.match(/<descResposta>([^<]+)<\/descResposta>/);
+    if (descMatch) erros.push(descMatch[1]);
   }
   return erros;
 }
@@ -298,9 +291,10 @@ app.post('/transmitir', async (req, res) => {
     // 5. Envia a requisição SOAP
     const response = await axios.post(endpoint, soapEnvelope, {
       httpsAgent,
+      responseType: 'text',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_1/ServicoEnviarLoteEventos/EnviarLoteEventos',
+        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/v1_1_0/ServicoEnviarLoteEventos/EnviarLoteEventos',
       },
       timeout: 60000,
     });
@@ -336,39 +330,23 @@ app.post('/transmitir', async (req, res) => {
       });
     }
 
- } catch (error) {
-  console.error(`[${new Date().toISOString()}] ERRO:`, error.message);
-
-  if (error.response) {
-    console.error('HTTP Status:', error.response.status);
-    console.error(
-      'Headers:',
-      JSON.stringify(error.response.headers, null, 2)
-    );
-
-    const rawData = error.response.data;
-
-    console.error(
-      'Response Data:',
-      typeof rawData === 'string'
-        ? rawData.substring(0, 5000)
-        : JSON.stringify(rawData, null, 2).substring(0, 5000)
-    );
+  } catch (error) {
+    console.error(`[${new Date().toISOString()}] ERRO:`, error.message);
+    if (error.response) {
+      console.error('HTTP Status:', error.response.status);
+      console.error('Headers:', JSON.stringify(error.response.headers, null, 2));
+      const rawData = error.response.data;
+      console.error('Response Data:', typeof rawData === 'string' ? rawData.substring(0, 5000) : JSON.stringify(rawData, null, 2).substring(0, 5000));
+    }
+    console.error('Stack:', error.stack);
+    const statusCode = error.response?.status || 500;
+    const errorData = error.response?.data || error.message;
+    res.status(statusCode).json({
+      error: error.message,
+      detalhe: typeof errorData === 'string' ? errorData.substring(0, 5000) : errorData,
+      stack: error.stack,
+    });
   }
-
-  console.error('Stack:', error.stack);
-
-  const statusCode = error.response?.status || 500;
-  const errorData = error.response?.data || error.message;
-
-  res.status(statusCode).json({
-    error: error.message,
-    detalhe:
-      typeof errorData === 'string'
-        ? errorData.substring(0, 5000)
-        : errorData
-  });
-}
 });
 
 // ══ ENDPOINT: Consultar lote ══
@@ -388,10 +366,14 @@ app.post('/consultar', async (req, res) => {
 
     const soapEnvelope = `<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
-   <ns2:ConsultarLoteEventos xmlns:ns2="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_1">
-      <consultarLoteEventos>
-        <protocoloEnvio>${protocolo}</protocoloEnvio>
-      </consultarLoteEventos>
+    <ns2:ConsultarLoteEventos xmlns:ns2="http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0">
+      <consulta>
+        <eSocial xmlns="http://www.esocial.gov.br/schema/lote/eventos/envio/consulta/retornoProcessamento/v1_0_0">
+          <consultaLoteEventos>
+            <protocoloEnvio>${protocolo}</protocoloEnvio>
+          </consultaLoteEventos>
+        </eSocial>
+      </consulta>
     </ns2:ConsultarLoteEventos>
   </soap:Body>
 </soap:Envelope>`;
@@ -400,9 +382,10 @@ app.post('/consultar', async (req, res) => {
 
     const response = await axios.post(endpoint, soapEnvelope, {
       httpsAgent,
+      responseType: 'text',
       headers: {
         'Content-Type': 'text/xml; charset=utf-8',
-        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_1/ServicoConsultarLoteEventos/ConsultarLoteEventos',
+        'SOAPAction': 'http://www.esocial.gov.br/servicos/empregador/lote/eventos/envio/consulta/retornoProcessamento/v1_1_0/ServicoConsultarLoteEventos/ConsultarLoteEventos',
       },
       timeout: 60000,
     });
