@@ -66,7 +66,10 @@ const ENDPOINTS = {
     enviar: 'https://webservices.producaorestrita.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc',
     consultar: 'https://webservices.producaorestrita.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc',
   },
- ! ❗ Documentation, tools, and behavior at fault. No PII from the user.
+  'Produção Oficial': {
+    enviar: 'https://webservices.envio.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc',
+    consultar: 'https://webservices.consulta.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc',
+  },
 };
 
 // ── Middleware de autenticação ──
