@@ -336,15 +336,39 @@ app.post('/transmitir', async (req, res) => {
       });
     }
 
-  } catch (error) {
-    console.error(`[${new Date().toISOString()}] ERRO:`, error.message);
-    const statusCode = error.response?.status || 500;
-    const errorData = error.response?.data || error.message;
-    res.status(statusCode).json({
-      error: error.message,
-      detalhe: typeof errorData === 'string' ? errorData.substring(0, 2000) : errorData,
-    });
+ } catch (error) {
+  console.error(`[${new Date().toISOString()}] ERRO:`, error.message);
+
+  if (error.response) {
+    console.error('HTTP Status:', error.response.status);
+    console.error(
+      'Headers:',
+      JSON.stringify(error.response.headers, null, 2)
+    );
+
+    const rawData = error.response.data;
+
+    console.error(
+      'Response Data:',
+      typeof rawData === 'string'
+        ? rawData.substring(0, 5000)
+        : JSON.stringify(rawData, null, 2).substring(0, 5000)
+    );
   }
+
+  console.error('Stack:', error.stack);
+
+  const statusCode = error.response?.status || 500;
+  const errorData = error.response?.data || error.message;
+
+  res.status(statusCode).json({
+    error: error.message,
+    detalhe:
+      typeof errorData === 'string'
+        ? errorData.substring(0, 5000)
+        : errorData
+  });
+}
 });
 
 // ══ ENDPOINT: Consultar lote ══
