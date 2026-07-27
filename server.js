@@ -432,15 +432,4 @@ app.listen(PORT, () => {
   console.log(`✅ Microserviço eSocial rodando na porta ${PORT}`);
   console.log(`   Health: http://localhost:${PORT}/health`);
 });
-⚠️ Atenção: houve um erro de formatação na seção ENDPOINTS (linhas 64-73) onde o texto ficou corrompido. O trecho correto da constante ENDPOINTS deve ser:
 
-const ENDPOINTS = {
-  'Produção Restrita': {
-    enviar: 'https://webservices.producaorestrita.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc',
-    consultar: 'https://webservices.producaorestrita.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc',
-  },
-  'Produção Oficial': {
-    enviar: 'https://webservices.envio.esocial.gov.br/servicos/empregador/enviarloteeventos/WsEnviarLoteEventos.svc',
-    consultar: 'https://webservices.consulta.esocial.gov.br/servicos/empregador/consultarloteeventos/WsConsultarLoteEventos.svc',
-  },
-};
